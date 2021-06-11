@@ -166,6 +166,11 @@ func (t *TableMap) bindUpdate(elem reflect.Value, colFilter ColumnFilter) (bindI
 		colFilter = acceptAllFilter
 	}
 
+	// The ColumnFilter feature was poorly architected. A lot of setup is cached in the
+	// updatePlan, but becomes incorrect when the ColumnFilter is changed. Our hasty
+	// way of fixing that is to just reset it every time.
+	t.ResetSql()
+
 	plan := &t.updatePlan
 	plan.once.Do(func() {
 		s := bytes.Buffer{}
@@ -214,7 +219,6 @@ func (t *TableMap) bindUpdate(elem reflect.Value, colFilter ColumnFilter) (bindI
 			plan.argFields = append(plan.argFields, plan.versField)
 		}
 		s.WriteString(t.dbmap.Dialect.QuerySuffix())
-
 		plan.query = s.String()
 	})
 
